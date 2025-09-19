@@ -28,16 +28,39 @@ import org.multipaz.util.getUInt16
 const private val TAG = "mdocReaderNfcHandover"
 
 /**
+ * The type of handover which occurred.
+ */
+enum class MdocHandoverType {
+    /** Static handover according to ISO/IEC 18013-5:2021 */
+    STATIC_HANDOVER,
+    /** Negotiated handover according to ISO/IEC 18013-5:2021 */
+    NEGOTIATED_HANDOVER,
+    /** Handover according to ISO/IEC 18013-5 Second Edition */
+    V2_HANDOVER
+}
+
+/**
  * The result of a successful NFC handover operation
  *
  * @property connectionMethods the possible connection methods for the mdoc reader to connect to.
  * @property encodedDeviceEngagement the bytes of DeviceEngagement.
  * @property handover the handover value.
+ * @property type the type of NFC handover which occurred.
  */
 data class MdocReaderNfcHandoverResult(
     val connectionMethods: List<MdocConnectionMethod>,
     val encodedDeviceEngagement: ByteString,
     val handover: DataItem,
+    val type: MdocHandoverType,
+)
+
+/**
+ * Options for when performing handover as a mdoc reader.
+ *
+ * @property useNfcV2 if `true`, will attempt to use NFCv2 handover from ISO 18013-5 Second Edition.
+ */
+data class MdocReaderNfcHandoverOptions(
+    val useNfcV2: Boolean = false
 )
 
 /**
@@ -46,15 +69,32 @@ data class MdocReaderNfcHandoverResult(
  * @param tag the [NfcIsoTag] representing a NFC connection to the mdoc.
  * @param negotiatedHandoverConnectionMethods the connection methods to offer if the remote mdoc is using NFC
  * negotiated handover.
+ * @param options a [MdocReaderNfcHandoverOptions]
  * @return a [MdocReaderNfcHandoverResult] if the handover was successful or `null` if the tag isn't an NDEF tag.
  * @throws Throwable if an error occurs during handover.
  */
 suspend fun mdocReaderNfcHandover(
     tag: NfcIsoTag,
     negotiatedHandoverConnectionMethods: List<MdocConnectionMethod>,
+    options: MdocReaderNfcHandoverOptions
 ): MdocReaderNfcHandoverResult? {
+    // First try the new engagement method, if requested...
+    if (options.useNfcV2) {
+        try {
+            tag.selectApplication(Nfc.MDOC_NFC_ENGAGEMENT_V2_AID)
+            Logger.i(TAG, "Successfully selected NFCv2 AID")
+            return mdocReaderNfcV2Handover(tag, negotiatedHandoverConnectionMethods)
+        } catch (e: NfcCommandFailedException) {
+            if (e.status == Nfc.RESPONSE_STATUS_ERROR_FILE_OR_APPLICATION_NOT_FOUND) {
+                Logger.i(TAG, "Selecting NFCv2 AID returned FILE_NOT_FOUND")
+            }
+        }
+    }
+
+    // Fall back to NDEF...
     try {
         tag.selectApplication(Nfc.NDEF_APPLICATION_ID)
+        Logger.i(TAG, "Successfully selected NDEF AID")
     } catch (e: NfcCommandFailedException) {
         // This is returned by Android when locked phone is being tapped by an mdoc reader. Once unlocked the
         // user will be shown UI to convey another tap should happen. So since we're the mdoc reader, we
@@ -65,6 +105,7 @@ suspend fun mdocReaderNfcHandover(
             return null
         }
     }
+
     tag.selectFile(Nfc.NDEF_CAPABILITY_CONTAINER_FILE_ID)
     // CC file is 15 bytes long
     val ccFile = tag.readBinary(0, 15)
@@ -96,6 +137,7 @@ suspend fun mdocReaderNfcHandover(
             connectionMethods = disambiguatedConnectionMethods,
             encodedDeviceEngagement = ByteString(encodedDeviceEngagement),
             handover = handover,
+            type = MdocHandoverType.STATIC_HANDOVER
         )
     }
 
@@ -150,6 +192,55 @@ suspend fun mdocReaderNfcHandover(
         ),
         encodedDeviceEngagement = ByteString(encodedDeviceEngagement),
         handover = handover,
+        type = MdocHandoverType.NEGOTIATED_HANDOVER
+    )
+}
+
+private suspend fun mdocReaderNfcV2Handover(
+    tag: NfcIsoTag,
+    negotiatedHandoverConnectionMethods: List<MdocConnectionMethod>,
+): MdocReaderNfcHandoverResult? {
+    // Send Handover Request message, the resulting NDEF message is Handover Response..
+    //
+    val combinedNegotiatedHandoverConnectionMethods = MdocConnectionMethod.combine(negotiatedHandoverConnectionMethods)
+    val hrMessage = generateHandoverRequestMessage(combinedNegotiatedHandoverConnectionMethods)
+    val hsMessage = tag.ndefTransact(
+        ndefMessage = hrMessage,
+        wtInt = 15,
+        nWait = 15
+    )
+    Logger.i(TAG, "Handover complete")
+
+    var bleUuid: UUID? = null
+    for (cm in negotiatedHandoverConnectionMethods) {
+        if (cm is MdocConnectionMethodBle) {
+            if (cm.peripheralServerModeUuid != null) {
+                bleUuid = cm.peripheralServerModeUuid
+                break
+            }
+            if (cm.centralClientModeUuid != null) {
+                bleUuid = cm.centralClientModeUuid
+                break
+            }
+        }
+    }
+    Logger.i(TAG, "Supplementing with UUID $bleUuid")
+    val (encodedDeviceEngagement, connectionMethods) = parseHandoverSelectMessage(hsMessage, bleUuid)
+    check(connectionMethods.size >= 1) { "No Alternative Carriers in HS message" }
+
+    val handover = buildCborArray {
+        add(hsMessage.encode()) // Handover Select message
+        add(hrMessage.encode()) // Handover Request message
+    }
+
+    return MdocReaderNfcHandoverResult(
+        connectionMethods = MdocConnectionMethod.disambiguate(
+            connectionMethods,
+            MdocRole.MDOC_READER
+        ),
+        encodedDeviceEngagement = ByteString(encodedDeviceEngagement),
+        handover = handover,
+        type = MdocHandoverType.V2_HANDOVER
     )
 }
 

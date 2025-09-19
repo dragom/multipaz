@@ -156,6 +156,15 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
             android:launchMode="singleInstance">
         </activity>
+        <activity
+            android:name=".TestAppMdocNfcV2PresentmentActivity"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
+            android:launchMode="singleInstance">
+        </activity>
 
         <service
             android:name=".TestAppMdocNdefService"
@@ -169,6 +178,20 @@
             <meta-data
                 android:name="android.nfc.cardemulation.host_apdu_service"
                 android:resource="@xml/nfc_ndef_service" />
+        </service>
+
+        <service
+            android:name=".TestAppMdocNfcV2Service"
+            android:exported="true"
+            android:label="@string/nfc_mdoc_engagement_service_aid_group_description"
+            android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter>
+                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.nfc.cardemulation.host_apdu_service"
+                android:resource="@xml/nfc_mdoc_nfcv2_service" />
         </service>
 
         <service

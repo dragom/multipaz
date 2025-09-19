@@ -35,7 +35,8 @@ import kotlin.time.Duration
  * the state to [State.CLOSED] except if it's already in [State.FAILED].
  *
  * [MdocTransport] instances are thread-safe and methods and properties can be called from
- * any thread or coroutine.
+ * any thread or coroutine. To avoid resource leaks it's important that [close] is always
+ * called with the application is done using the [MdocTransport], even if it fails.
  */
 abstract class MdocTransport {
 

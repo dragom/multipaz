@@ -16,6 +16,10 @@ object Nfc {
      */
     val NDEF_APPLICATION_ID = ByteString("D2760000850101".fromHex())
 
+    /** To be defined in 18013-5 Second Edition.
+     */
+    val MDOC_NFC_ENGAGEMENT_V2_AID = ByteString("A0000002480401".fromHex())
+
     /**
      * The Application ID for ISO mdoc NFC data transfer.
      *

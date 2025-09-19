@@ -11,11 +11,13 @@ import kotlin.time.Duration
  * @property transport The [MdocTransport] which to hand over to.
  * @property encodedDeviceEngagement the device engagement that was used.
  * @property handover the handover that was used.
+ * @property type the type of handover.
  * @property processingDuration the amount of time spent exchanging APDUs to set up the handover.
  */
 data class ScanMdocReaderResult(
     val transport: MdocTransport,
     val encodedDeviceEngagement: ByteString,
     val handover: DataItem,
+    val type: MdocHandoverType,
     val processingDuration: Duration
 )

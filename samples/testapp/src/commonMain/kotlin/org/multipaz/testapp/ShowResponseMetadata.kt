@@ -8,6 +8,8 @@ data class ShowResponseMetadata(
     val transferProtocol: String,
     val requestSize: Long,
     val responseSize: Long,
+    val requestSentViaNfcV2: Boolean?,
+    val responseReceivedViaNfcV2: Boolean?,
     val durationMsecNfcTapToEngagement: Long?,
     val durationMsecEngagementReceivedToRequestSent: Long?,
     val durationMsecRequestSentToResponseReceived: Long

@@ -15,11 +15,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-import org.multipaz.compose.mdoc.MdocNdefService.Companion.presentmentModel
 import org.multipaz.compose.presentment.Presentment
 import org.multipaz.compose.prompt.PromptDialogs
 import org.multipaz.context.initializeApplication
 import org.multipaz.documenttype.DocumentTypeRepository
+import org.multipaz.models.presentment.PresentmentModel
 import org.multipaz.models.presentment.PresentmentSource
 import org.multipaz.prompt.PromptModel
 
@@ -49,6 +49,7 @@ abstract class MdocNfcPresentmentActivity : FragmentActivity() {
         val promptModel: PromptModel,
         val applicationTheme: @Composable (content: @Composable () -> Unit) -> Unit,
         val documentTypeRepository: DocumentTypeRepository,
+        val presentmentModel: PresentmentModel,
         val presentmentSource: PresentmentSource,
         val imageLoader: ImageLoader
     )
@@ -71,7 +72,7 @@ abstract class MdocNfcPresentmentActivity : FragmentActivity() {
     }
 
     private fun startPresentment(settings: Settings) {
-        presentmentModel.setPromptModel(settings.promptModel)
+        settings.presentmentModel.setPromptModel(settings.promptModel)
         setContent {
             settings.applicationTheme {
                 Scaffold { innerPadding ->
@@ -80,7 +81,7 @@ abstract class MdocNfcPresentmentActivity : FragmentActivity() {
                         modifier = Modifier.consumeWindowInsets(innerPadding),
                         appName = settings.appName,
                         appIconPainter = painterResource(settings.appIcon),
-                        presentmentModel = presentmentModel,
+                        presentmentModel = settings.presentmentModel,
                         presentmentSource = settings.presentmentSource,
                         documentTypeRepository = settings.documentTypeRepository,
                         imageLoader = settings.imageLoader,

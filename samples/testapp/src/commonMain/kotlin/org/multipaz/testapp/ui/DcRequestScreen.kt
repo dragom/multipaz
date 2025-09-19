@@ -345,6 +345,8 @@ private suspend fun doDcRequestFlow(
         transferProtocol = "W3C Digital Credentials (${protocol.displayName})",
         requestSize = Json.encodeToString(dcRequestObject).length.toLong(),
         responseSize = Json.encodeToString(dcResponseObject).length.toLong(),
+        requestSentViaNfcV2 = null,
+        responseReceivedViaNfcV2 = null,
         durationMsecNfcTapToEngagement = null,
         durationMsecEngagementReceivedToRequestSent = null,
         durationMsecRequestSentToResponseReceived = (Clock.System.now() - t0).inWholeMilliseconds

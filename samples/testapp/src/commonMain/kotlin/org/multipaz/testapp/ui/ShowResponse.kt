@@ -253,7 +253,17 @@ private suspend fun parseResponse(
         lines.add(Line("Engagement Type", ValueText(metadata.engagementType)))
         lines.add(Line("Transfer Protocol", ValueText(metadata.transferProtocol)))
         lines.add(Line("Request size", ValueSize(metadata.requestSize)))
+        if (metadata.requestSentViaNfcV2 != null) {
+            lines.add(Line("Request sent over NFC",
+                ValueText(if (metadata.requestSentViaNfcV2) "Yes" else "No")
+            ))
+        }
         lines.add(Line("Response size", ValueSize(metadata.responseSize)))
+        if (metadata.responseReceivedViaNfcV2 != null) {
+            lines.add(Line("Response received over NFC",
+                ValueText(if (metadata.responseReceivedViaNfcV2) "Yes" else "No")
+            ))
+        }
         lines.add(Line("Tap to engagement received", ValueDuration(
             metadata.durationMsecNfcTapToEngagement?.toDuration(DurationUnit.MILLISECONDS)
         )))
