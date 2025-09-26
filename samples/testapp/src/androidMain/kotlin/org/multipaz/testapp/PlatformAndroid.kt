@@ -125,4 +125,6 @@ actual fun getAppToAppOrigin(): String {
     return getAppOrigin(packageInfo.signatures!![0].toByteArray())
 }
 
-actual suspend fun getExternalNfcTagReaders(): List<NfcTagReader> = emptyList()
+actual suspend fun getExternalNfcTagReaders(): List<NfcTagReader> {
+    return nfcTagReaderAcsCheck()?.let { listOf(it) } ?: emptyList()
+}

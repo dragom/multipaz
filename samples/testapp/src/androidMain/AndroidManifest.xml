@@ -9,6 +9,9 @@
     <uses-feature android:name="android.hardware.camera.autofocus"/>
     <uses-permission android:name="android.permission.CAMERA"/>
 
+    <!-- For ACS external NFC reader -->
+    <uses-feature android:name="android.hardware.usb.host" />
+
     <!-- For BLE -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"

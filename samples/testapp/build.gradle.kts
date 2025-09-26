@@ -79,6 +79,8 @@ kotlin {
                 implementation(libs.androidx.biometrics)
                 implementation(libs.ktor.client.android)
                 implementation(libs.process.phoenix)
+                // Need to manually download and place this file in samples/testapp directory
+                implementation(files("acssmc-1.1.6.aar"))
             }
         }
 
